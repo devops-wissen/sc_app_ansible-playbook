@@ -1,0 +1,50 @@
+---
+- hosts: all
+  become: yes
+  gather_facts: false
+  vars:
+     ansible_python_interpreter: /usr/bin/python3  
+  tasks:
+    - name: install mysql     
+      apt:
+        name: mysql-server 
+        update_cache: yes 
+        cache_valid_time: 3600 
+        state: present
+    - name: install mysql client
+      apt:
+        name: mysql-client
+        state: present
+    - name: install mysqldb
+      apt:
+        name: python3-mysqldb
+        state: present
+    - name: start and enable mysql service
+      service:
+        name: mysql
+        state: started
+        enabled: yes
+    - name: creating mysql user (medium_post)
+      mysql_user:
+        name: admin
+        password: Wissen@01
+        priv: '*.*:ALL'
+        host: '35.174.217.170'
+        state: present
+    - name: creating medium_db
+      mysql_db:
+        name: service_catalog_db
+        state: present
+    - name: Enable remote login to mysql
+      lineinfile:
+         path: /etc/mysql/mysql.conf.d/mysqld.cnf
+         regexp: '^bind-address'
+         line: 'bind-address = 0.0.0.0'
+         backup: yes
+      notify:
+         - Restart mysql
+  handlers:
+    - name: Restart mysql
+      service:
+        name: mysql
+        state: restarted
